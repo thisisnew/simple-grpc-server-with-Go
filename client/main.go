@@ -5,7 +5,6 @@ import (
 	"google.golang.org/grpc"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
-	vehicleData "grpc/data"
 	vehicle "grpc/protos"
 	"log"
 	"net"
@@ -15,10 +14,10 @@ const portNumber = "9000"
 const dsn = "root:1234@tcp(127.0.0.1:3306)/test?charset=utf8mb4&parseTime=True&loc=Local"
 
 type Vehicle struct {
-	VehicleId string
-	VehicleName string
-	VehicleNumber string
-	VehicleVinNumber string
+	VehicleId           string
+	VehicleName         string
+	VehicleNumber       string
+	VehicleVinNumber    string
 	VehicleSerialNumber string
 }
 
@@ -29,17 +28,17 @@ type vehicleServer struct {
 func (s *vehicleServer) GetVehicle(ctx context.Context, req *vehicle.GetVehicleRequest) (*vehicle.GetVehicleResponse, error) {
 	id := req.GetVehicleId()
 
-	var vehicleMessage *vehicle.VehicleMessage
-	for _, v := range vehicleData.Vehicles {
-		if v.VehicleId != id {
-			continue
-		}
-		vehicleMessage = v
-		break
+	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
+
+	if err != nil {
+		panic("failed to connect database")
 	}
 
+	var message *vehicle.VehicleMessage
+	db.Where("vehicle_id = ?", id).Find(&message)
+
 	return &vehicle.GetVehicleResponse{
-		VehicleMessage: vehicleMessage,
+		VehicleMessage: message,
 	}, nil
 }
 
