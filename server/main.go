@@ -10,20 +10,19 @@ import (
 	"net"
 )
 
-const portNumber = "9000"
-
 var db *gorm.DB
 
-type Vehicle struct {
-	VehicleId           string
-	VehicleName         string
-	VehicleNumber       string
-	VehicleVinNumber    string
-	VehicleSerialNumber string
+type statusMessage struct {
+	status  string
+	message string
 }
 
 type vehicleServer struct {
 	vehicle.VehicleServer
+}
+
+func init() {
+	db = mysql.Connect()
 }
 
 func (s *vehicleServer) GetVehicle(ctx context.Context, req *vehicle.GetVehicleRequest) (*vehicle.GetVehicleResponse, error) {
@@ -53,43 +52,64 @@ func (s *vehicleServer) ListVehicles(ctx context.Context, req *vehicle.ListVehic
 	}, nil
 }
 
-func (s *vehicleServer) InsertVehicle(ctx context.Context, req *vehicle.VehicleMessage) (*vehicle.GetVehicleResponse, error) {
+func (s *vehicleServer) InsertVehicle(ctx context.Context, req *vehicle.VehicleMessage) (*vehicle.StatusMessage, error) {
 
 	result := db.Create(&req)
 
 	if result.RowsAffected > 0 {
-		return &vehicle.GetVehicleResponse{
-			VehicleMessage: req,
+		return &vehicle.StatusMessage{
+			Status:  "200",
+			Message: "Success",
 		}, nil
 	}
 
-	return &vehicle.GetVehicleResponse{}, nil
+	return &vehicle.StatusMessage{
+		Status:  "500",
+		Message: "Failure",
+	}, nil
 }
 
-func (s *vehicleServer) UpdateVehicle(ctx context.Context, req *vehicle.VehicleMessage) (*vehicle.GetVehicleResponse, error) {
+func (s *vehicleServer) UpdateVehicle(ctx context.Context, req *vehicle.VehicleMessage) (*vehicle.StatusMessage, error) {
 
 	result := db.Model(&req).Where("vehicle_id = ?", req.VehicleId).Updates(map[string]interface{}{"vehicle_name": req.VehicleName, "vehicle_number": req.VehicleNumber, "vehicle_vin_number": req.VehicleVinNumber, "vehicle_serial_number": req.VehicleSerialNumber})
 
 	if result.RowsAffected == 0 {
-
-		return &vehicle.GetVehicleResponse{}, nil
+		return &vehicle.StatusMessage{
+			Status:  "500",
+			Message: "Failure",
+		}, nil
 	} else {
-
-		var message *vehicle.VehicleMessage
-		db.Where("vehicle_id = ?", req.VehicleId).Find(&message)
-
-		return &vehicle.GetVehicleResponse{
-			VehicleMessage: message,
+		return &vehicle.StatusMessage{
+			Status:  "200",
+			Message: "Success",
 		}, nil
 	}
 }
 
-func init() {
-	db = mysql.Connect()
+func (s *vehicleServer) DeleteVehicle(ctx context.Context, req *vehicle.GetVehicleRequest) (*vehicle.ListVehiclesResponse, error) {
+
+	id := req.GetVehicleId()
+
+	var vehicleMessage *vehicle.VehicleMessage
+
+	db.Where("vehicle_id = ?", id).Delete(&vehicleMessage)
+
+	var result []*vehicle.VehicleMessage
+
+	db.Find(&result)
+
+	messages := make([]*vehicle.VehicleMessage, len(result))
+	for i, v := range result {
+		messages[i] = v
+	}
+
+	return &vehicle.ListVehiclesResponse{
+		VehicleMessages: messages,
+	}, nil
 }
 
 func main() {
-	lis, err := net.Listen("tcp", ":"+portNumber)
+	lis, err := net.Listen("tcp", ":9000")
 	if err != nil {
 		log.Fatalf("failed to listen: %v", err)
 	}
@@ -100,5 +120,4 @@ func main() {
 	if err := grpcServer.Serve(lis); err != nil {
 		log.Fatalf("failed to serve: %s", err)
 	}
-
 }

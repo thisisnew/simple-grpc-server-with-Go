@@ -7,8 +7,9 @@ option go_package = "protos/vehicle";
 service Vehicle {
   rpc GetVehicle(GetVehicleRequest) returns (GetVehicleResponse);
   rpc ListVehicles(ListVehiclesRequest) returns (ListVehiclesResponse);
-  rpc InsertVehicle(VehicleMessage) returns (GetVehicleResponse);
-  rpc UpdateVehicle(VehicleMessage) returns (GetVehicleResponse);
+  rpc InsertVehicle(VehicleMessage) returns (StatusMessage);
+  rpc UpdateVehicle(VehicleMessage) returns (StatusMessage);
+  rpc DeleteVehicle(GetVehicleRequest) returns (ListVehiclesResponse);
 }
 
 message VehicleMessage {
@@ -31,4 +32,9 @@ message ListVehiclesRequest{}
 
 message ListVehiclesResponse {
   repeated VehicleMessage vehicle_messages = 1;
+}
+
+message StatusMessage {
+  string status = 1;
+  string message = 2;
 }
