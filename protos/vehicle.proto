@@ -7,6 +7,8 @@ option go_package = "protos/vehicle";
 service Vehicle {
   rpc GetVehicle(GetVehicleRequest) returns (GetVehicleResponse);
   rpc ListVehicles(ListVehiclesRequest) returns (ListVehiclesResponse);
+  rpc InsertVehicle(VehicleMessage) returns (GetVehicleResponse);
+  rpc UpdateVehicle(VehicleMessage) returns (GetVehicleResponse);
 }
 
 message VehicleMessage {

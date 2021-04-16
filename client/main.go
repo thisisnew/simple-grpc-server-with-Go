@@ -53,6 +53,37 @@ func (s *vehicleServer) ListVehicles(ctx context.Context, req *vehicle.ListVehic
 	}, nil
 }
 
+func (s *vehicleServer) InsertVehicle(ctx context.Context, req *vehicle.VehicleMessage) (*vehicle.GetVehicleResponse, error) {
+
+	result := db.Create(&req)
+
+	if result.RowsAffected > 0 {
+		return &vehicle.GetVehicleResponse{
+			VehicleMessage: req,
+		}, nil
+	}
+
+	return &vehicle.GetVehicleResponse{}, nil
+}
+
+func (s *vehicleServer) UpdateVehicle(ctx context.Context, req *vehicle.VehicleMessage) (*vehicle.GetVehicleResponse, error) {
+
+	result := db.Model(&req).Where("vehicle_id = ?", req.VehicleId).Updates(map[string]interface{}{"vehicle_name": req.VehicleName, "vehicle_number": req.VehicleNumber, "vehicle_vin_number": req.VehicleVinNumber, "vehicle_serial_number": req.VehicleSerialNumber})
+
+	if result.RowsAffected == 0 {
+
+		return &vehicle.GetVehicleResponse{}, nil
+	} else {
+
+		var message *vehicle.VehicleMessage
+		db.Where("vehicle_id = ?", req.VehicleId).Find(&message)
+
+		return &vehicle.GetVehicleResponse{
+			VehicleMessage: message,
+		}, nil
+	}
+}
+
 func init() {
 	db = mysql.Connect()
 }
