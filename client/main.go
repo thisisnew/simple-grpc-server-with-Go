@@ -3,15 +3,16 @@ package main
 import (
 	"context"
 	"google.golang.org/grpc"
-	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
+	mysql "grpc/db"
 	vehicle "grpc/protos"
 	"log"
 	"net"
 )
 
 const portNumber = "9000"
-const dsn = "root:1234@tcp(127.0.0.1:3306)/test?charset=utf8mb4&parseTime=True&loc=Local"
+
+var db *gorm.DB
 
 type Vehicle struct {
 	VehicleId           string
@@ -28,12 +29,6 @@ type vehicleServer struct {
 func (s *vehicleServer) GetVehicle(ctx context.Context, req *vehicle.GetVehicleRequest) (*vehicle.GetVehicleResponse, error) {
 	id := req.GetVehicleId()
 
-	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
-
-	if err != nil {
-		panic("failed to connect database")
-	}
-
 	var message *vehicle.VehicleMessage
 	db.Where("vehicle_id = ?", id).Find(&message)
 
@@ -43,12 +38,6 @@ func (s *vehicleServer) GetVehicle(ctx context.Context, req *vehicle.GetVehicleR
 }
 
 func (s *vehicleServer) ListVehicles(ctx context.Context, req *vehicle.ListVehiclesRequest) (*vehicle.ListVehiclesResponse, error) {
-
-	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
-
-	if err != nil {
-		panic("failed to connect database")
-	}
 
 	var result []*vehicle.VehicleMessage
 
@@ -64,6 +53,10 @@ func (s *vehicleServer) ListVehicles(ctx context.Context, req *vehicle.ListVehic
 	}, nil
 }
 
+func init() {
+	db = mysql.Connect()
+}
+
 func main() {
 	lis, err := net.Listen("tcp", ":"+portNumber)
 	if err != nil {
@@ -76,4 +69,5 @@ func main() {
 	if err := grpcServer.Serve(lis); err != nil {
 		log.Fatalf("failed to serve: %s", err)
 	}
+
 }
