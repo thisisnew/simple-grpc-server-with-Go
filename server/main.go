@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"google.golang.org/grpc"
 	"gorm.io/gorm"
 	mysql "grpc/db"
@@ -105,6 +106,26 @@ func (s *vehicleServer) DeleteVehicle(ctx context.Context, req *vehicle.GetVehic
 
 	return &vehicle.ListVehiclesResponse{
 		VehicleMessages: messages,
+	}, nil
+}
+
+func (s *vehicleServer) InsertGeoDatas(ctx context.Context, req *vehicle.GeoDatas) (*vehicle.StatusMessage, error) {
+
+	aaa := &req
+	fmt.Println(aaa)
+
+	//result := db.Create(&req)
+	//
+	//if result.RowsAffected > 0 {
+	//	return &vehicle.StatusMessage{
+	//		Status:  "200",
+	//		Message: "Success",
+	//	}, nil
+	//}
+
+	return &vehicle.StatusMessage{
+		Status:  "500",
+		Message: "Failure",
 	}, nil
 }
 
